@@ -13,7 +13,7 @@ class SettingsController extends Controller
 {
     public function __invoke(): View|RedirectResponse
     {
-        if ($redirect = $this->redirectIfMissingRole(Role::ADMINISTRATOR)) {
+        if ($redirect = $this->redirectIfMissingRole(Role::ADMIN, Role::ADMINISTRATOR)) {
             return $redirect;
         }
 
@@ -26,7 +26,7 @@ class SettingsController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
-        if ($redirect = $this->redirectIfMissingRole(Role::ADMINISTRATOR)) {
+        if ($redirect = $this->redirectIfMissingRole(Role::ADMIN, Role::ADMINISTRATOR)) {
             return $redirect;
         }
 

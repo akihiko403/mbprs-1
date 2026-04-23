@@ -178,6 +178,22 @@ class BuildingPermitController extends Controller
         return Storage::disk('local')->download($document->path, $document->original_name);
     }
 
+    public function destroyDocument(Request $request, BuildingPermit $buildingPermit, BuildingPermitDocument $document): RedirectResponse
+    {
+        if ($redirect = $this->redirectIfCannotAccess('building-permits')) {
+            return $redirect;
+        }
+
+        abort_unless($document->building_permit_id === $buildingPermit->id, 404);
+
+        Storage::disk('local')->delete($document->path);
+        $document->delete();
+
+        return redirect()
+            ->route('building-permits.index', ['edit' => $buildingPermit->id])
+            ->with('success', 'Document deleted successfully.');
+    }
+
     private function validatedPermit(Request $request, ?BuildingPermit $buildingPermit = null): array
     {
         return $request->validate([
@@ -200,6 +216,36 @@ class BuildingPermitController extends Controller
 
                     if (($existingCount + $incomingCount) > 20) {
                         $fail('A permit can only have up to 20 documents.');
+                    }
+
+                    $incomingNames = collect(is_array($value) ? $value : [])
+                        ->filter(fn (mixed $file): bool => $file instanceof UploadedFile)
+                        ->map(fn (UploadedFile $file): string => Str::lower($file->getClientOriginalName()))
+                        ->values();
+
+                    $duplicateIncomingName = $incomingNames
+                        ->duplicates()
+                        ->first();
+
+                    if ($duplicateIncomingName) {
+                        $fail('Each uploaded document must have a unique file name.');
+
+                        return;
+                    }
+
+                    if (! $buildingPermit || $incomingNames->isEmpty()) {
+                        return;
+                    }
+
+                    $existingNames = $buildingPermit->documents()
+                        ->pluck('original_name')
+                        ->map(fn (string $name): string => Str::lower($name));
+
+                    $existingDuplicate = $incomingNames
+                        ->first(fn (string $name): bool => $existingNames->contains($name));
+
+                    if ($existingDuplicate) {
+                        $fail('A document with this file name already exists for this permit.');
                     }
                 },
             ],

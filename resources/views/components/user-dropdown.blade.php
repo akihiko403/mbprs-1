@@ -4,7 +4,6 @@
 
     $user = Auth::user();
     $isAdmin = $user?->hasRole(Role::ADMIN, Role::ADMINISTRATOR);
-    $isAdministrator = $user?->hasRole(Role::ADMINISTRATOR);
     $displayName = $isAdmin ? 'Administrator' : $user?->name;
     $initials = collect(explode(' ', (string) $user?->name))->filter()->map(fn ($part) => mb_substr($part, 0, 1))->take(2)->implode('');
     $profilePhotoUrl = $user?->profile_photo_path
@@ -40,7 +39,7 @@
     >
         <a class="user-dropdown-item" href="{{ route('profile') }}">Profile</a>
 
-        @if($isAdministrator)
+        @if($isAdmin)
             <a class="user-dropdown-item" href="{{ route('settings') }}">Settings</a>
             <a class="user-dropdown-item" href="{{ route('backup-restore.index') }}">Backup & Restore</a>
         @endif

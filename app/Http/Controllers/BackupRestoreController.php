@@ -15,7 +15,7 @@ class BackupRestoreController extends Controller
 {
     public function index(): View|RedirectResponse
     {
-        if ($redirect = $this->redirectIfMissingRole(Role::ADMINISTRATOR)) {
+        if ($redirect = $this->redirectIfMissingRole(Role::ADMIN, Role::ADMINISTRATOR)) {
             return $redirect;
         }
 
@@ -29,7 +29,7 @@ class BackupRestoreController extends Controller
 
     public function backup(): StreamedResponse|RedirectResponse
     {
-        if ($redirect = $this->redirectIfMissingRole(Role::ADMINISTRATOR)) {
+        if ($redirect = $this->redirectIfMissingRole(Role::ADMIN, Role::ADMINISTRATOR)) {
             return $redirect;
         }
 
@@ -70,7 +70,7 @@ class BackupRestoreController extends Controller
 
     public function restore(Request $request): RedirectResponse
     {
-        if ($redirect = $this->redirectIfMissingRole(Role::ADMINISTRATOR)) {
+        if ($redirect = $this->redirectIfMissingRole(Role::ADMIN, Role::ADMINISTRATOR)) {
             return $redirect;
         }
 

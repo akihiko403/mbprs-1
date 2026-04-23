@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('building-permits', BuildingPermitController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
     Route::get('/building-permits/{buildingPermit}/documents/{document}/preview', [BuildingPermitController::class, 'previewDocument'])->name('building-permits.documents.preview');
     Route::get('/building-permits/{buildingPermit}/documents/{document}', [BuildingPermitController::class, 'downloadDocument'])->name('building-permits.documents.download');
+    Route::delete('/building-permits/{buildingPermit}/documents/{document}', [BuildingPermitController::class, 'destroyDocument'])->name('building-permits.documents.destroy');
     Route::patch('/building-types/trash/{id}/restore', [BuildingTypeController::class, 'restore'])->name('building-types.restore');
     Route::delete('/building-types/trash/{id}/force-delete', [BuildingTypeController::class, 'forceDelete'])->name('building-types.force-delete');
     Route::resource('building-types', BuildingTypeController::class)->only(['index', 'store', 'update', 'destroy']);

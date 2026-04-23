@@ -23,6 +23,7 @@
     .selected-file-item { display:inline-flex; align-items:center; gap:8px; max-width:220px; padding:8px 10px 8px 12px; border:1px solid #cbd5e1; border-radius:12px; background:#f8fafc; color:var(--ink); font-size:12px; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(255,255,255,.55); }
     .selected-file-name { min-width:0; flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .selected-file-remove { display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; width:18px; height:18px; border:0; border-radius:999px; background:#fee2e2; color:#b91c1c; font-size:13px; font-weight:700; line-height:1; padding:0; cursor:pointer; }
+    .upload-error { margin-top:6px; color:var(--danger); font-size:.86rem; font-weight:600; }
     .document-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-top:8px; }
     .document-card {
         display:flex;
@@ -108,18 +109,16 @@
         flex:0 0 auto;
     }
     .document-action-btn {
-        border-radius:12px;
-    }
-    .document-list-actions .btn {
         display:inline-flex;
         align-items:center;
         justify-content:center;
-        width:88px;
-        min-width:88px;
+        width:36px;
+        min-width:36px;
         height:36px;
-        padding:0 10px;
-        white-space:nowrap;
+        padding:0;
+        border-radius:10px;
     }
+    .document-action-btn svg { width:16px; height:16px; flex-shrink:0; }
     .preview-modal-card { width:min(1080px, 100%); }
     .document-preview-shell { display:grid; gap:16px; }
     .document-preview-frame { width:100%; min-height:68vh; border:1px solid var(--line); border-radius:16px; background:#f6faf8; }
@@ -359,10 +358,17 @@
                 <div>
                     <label>Documents</label>
                     <div class="upload-box">
-                        <input id="permit-documents-input" type="file" name="documents[]" multiple>
+                        <input
+                            id="permit-documents-input"
+                            type="file"
+                            name="documents[]"
+                            multiple
+                            data-existing-document-names='@json($editPermit?->documents->pluck('original_name')->values() ?? [])'
+                        >
                         <label for="permit-documents-input" class="upload-trigger">Choose Files</label>
                         <ul id="selected-documents-list" class="selected-files"></ul>
                     </div>
+                    <div id="document-upload-error" class="upload-error" role="alert" hidden></div>
                     <small class="muted">You can upload up to 20 documents per permit. Max 10 MB each.</small>
                 </div>
                 @if($editPermit && $editPermit->documents->isNotEmpty())
@@ -388,8 +394,17 @@
                                             data-download-url="{{ route('building-permits.documents.download', [$editPermit, $document]) }}"
                                             data-document-name="{{ $document->original_name }}"
                                             data-previewable="{{ $canPreview ? 'true' : 'false' }}"
-                                        >View</button>
-                                        <a class="btn secondary document-action-btn" href="{{ route('building-permits.documents.download', [$editPermit, $document]) }}">Download</a>
+                                            title="View"
+                                            aria-label="View {{ $document->original_name }}"
+                                        ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                                        <a class="btn secondary document-action-btn" href="{{ route('building-permits.documents.download', [$editPermit, $document]) }}" title="Download" aria-label="Download {{ $document->original_name }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></a>
+                                        <button
+                                            class="btn danger document-action-btn"
+                                            type="submit"
+                                            form="delete-document-form-{{ $document->id }}"
+                                            title="Delete"
+                                            aria-label="Delete {{ $document->original_name }}"
+                                        ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
                                     </div>
                                 </div>
                             @endforeach
@@ -402,10 +417,36 @@
                     <button class="btn secondary" style="width:auto;" type="button" data-close-modal="permit-modal">Cancel</button>
                 </div>
             </form>
+            @if($editPermit && $editPermit->documents->isNotEmpty())
+                @foreach($editPermit->documents as $document)
+                    <form
+                        id="delete-document-form-{{ $document->id }}"
+                        method="POST"
+                        action="{{ route('building-permits.documents.destroy', [$editPermit, $document]) }}"
+                        data-confirm-delete
+                        data-confirm-message="Delete this document?"
+                        style="display:none;"
+                    >
+                        @csrf
+                        @method('DELETE')
+                    </form>
+                @endforeach
+            @endif
         </div>
     </div>
 </div>
 @endunless
+
+<div class="global-modal-backdrop" id="discard-changes-modal" aria-hidden="true">
+    <div class="global-modal-card" role="dialog" aria-modal="true" aria-labelledby="discard-changes-title">
+        <h3 class="global-modal-title" id="discard-changes-title">Discard Changes</h3>
+        <p class="global-modal-text">Are you sure you want to close this form? Unsaved changes will be lost.</p>
+        <div class="stack save-modal-actions">
+            <button class="btn danger" id="discard-changes-submit" type="button">Discard Changes</button>
+            <button class="btn secondary" id="discard-changes-cancel" type="button">Keep Editing</button>
+        </div>
+    </div>
+</div>
 
 <div class="modal-backdrop" id="document-preview-modal" aria-hidden="true">
     <div class="modal-card preview-modal-card">
@@ -437,6 +478,100 @@
 </div>
 
 <script>
+    let selectedPermitFilesCount = 0;
+    const discardModal = document.getElementById('discard-changes-modal');
+    const discardSubmit = document.getElementById('discard-changes-submit');
+    const discardCancel = document.getElementById('discard-changes-cancel');
+    const permitModal = document.getElementById('permit-modal');
+    const permitForm = permitModal?.querySelector('form');
+    let pendingDiscardModal = null;
+    let initialPermitFormState = '';
+
+    const getPermitFormState = () => {
+        if (!permitForm) {
+            return '';
+        }
+
+        const formData = new FormData(permitForm);
+        const entries = Array.from(formData.entries())
+            .filter(([name, value]) => name !== 'documents[]' && !(value instanceof File))
+            .map(([name, value]) => [name, String(value)]);
+
+        return JSON.stringify({
+            entries,
+            fileCount: selectedPermitFilesCount,
+        });
+    };
+
+    const syncInitialPermitFormState = () => {
+        initialPermitFormState = getPermitFormState();
+    };
+
+    const permitFormHasChanges = () => getPermitFormState() !== initialPermitFormState;
+
+    const closePermitModal = (modal) => {
+        modal.classList.remove('open');
+
+        if (window.location.search.includes('edit=')) {
+            window.location = '{{ route('building-permits.index') }}';
+        }
+    };
+
+    const requestDiscardConfirmation = (modal) => {
+        if (!permitFormHasChanges()) {
+            closePermitModal(modal);
+            return;
+        }
+
+        pendingDiscardModal = modal;
+
+        if (discardModal) {
+            discardModal.classList.add('open');
+            discardModal.setAttribute('aria-hidden', 'false');
+        }
+    };
+
+    const closeDiscardConfirmation = () => {
+        if (discardModal) {
+            discardModal.classList.remove('open');
+            discardModal.setAttribute('aria-hidden', 'true');
+        }
+
+        pendingDiscardModal = null;
+    };
+
+    if (discardSubmit) {
+        discardSubmit.addEventListener('click', () => {
+            if (pendingDiscardModal) {
+                closePermitModal(pendingDiscardModal);
+            }
+
+            closeDiscardConfirmation();
+        });
+    }
+
+    if (discardCancel) {
+        discardCancel.addEventListener('click', closeDiscardConfirmation);
+    }
+
+    if (discardModal) {
+        discardModal.addEventListener('click', (modalEvent) => {
+            if (modalEvent.target === discardModal) {
+                closeDiscardConfirmation();
+            }
+        });
+
+        document.addEventListener('keydown', (keyEvent) => {
+            if (keyEvent.key === 'Escape' && discardModal.classList.contains('open')) {
+                closeDiscardConfirmation();
+            }
+        });
+    }
+
+    if (permitModal?.classList.contains('open')) {
+        syncInitialPermitFormState();
+    }
+
     document.addEventListener('click', function (event) {
         const openTrigger = event.target.closest('[data-open-modal]');
         const closeTrigger = event.target.closest('[data-close-modal]');
@@ -480,12 +615,23 @@
 
         if (openTrigger) {
             const modal = document.getElementById(openTrigger.dataset.openModal);
-            if (modal) modal.classList.add('open');
+            if (modal) {
+                modal.classList.add('open');
+
+                if (modal.id === 'permit-modal') {
+                    syncInitialPermitFormState();
+                }
+            }
         }
 
         if (closeTrigger) {
             const modal = document.getElementById(closeTrigger.dataset.closeModal);
             if (modal) {
+                if (modal.id === 'permit-modal') {
+                    requestDiscardConfirmation(modal);
+                    return;
+                }
+
                 modal.classList.remove('open');
 
                 if (modal.id === 'document-preview-modal') {
@@ -501,6 +647,11 @@
         }
 
         if (event.target.classList.contains('modal-backdrop')) {
+            if (event.target.id === 'permit-modal') {
+                requestDiscardConfirmation(event.target);
+                return;
+            }
+
             event.target.classList.remove('open');
 
             if (event.target.id === 'document-preview-modal') {
@@ -517,9 +668,11 @@
 
     const documentsInput = document.getElementById('permit-documents-input');
     const selectedDocumentsList = document.getElementById('selected-documents-list');
+    const documentUploadError = document.getElementById('document-upload-error');
 
     if (documentsInput && selectedDocumentsList) {
         const selectedFiles = new DataTransfer();
+        const existingDocumentNames = new Set(JSON.parse(documentsInput.dataset.existingDocumentNames || '[]').map((name) => name.toLowerCase()));
         const compactFileName = (fileName) => {
             if (fileName.length <= 28) {
                 return fileName;
@@ -530,6 +683,22 @@
             const baseName = extensionIndex > 0 ? fileName.slice(0, extensionIndex) : fileName;
 
             return `${baseName.slice(0, 20)}...${extension}`;
+        };
+        const showUploadError = (message) => {
+            if (!documentUploadError) {
+                return;
+            }
+
+            documentUploadError.textContent = message;
+            documentUploadError.hidden = false;
+        };
+        const clearUploadError = () => {
+            if (!documentUploadError) {
+                return;
+            }
+
+            documentUploadError.textContent = '';
+            documentUploadError.hidden = true;
         };
 
         const syncSelectedDocuments = () => {
@@ -564,6 +733,7 @@
                     });
 
                     documentsInput.files = selectedFiles.files;
+                    selectedPermitFilesCount = selectedFiles.files.length;
                     syncSelectedDocuments();
                 });
 
@@ -574,18 +744,30 @@
         };
 
         documentsInput.addEventListener('change', () => {
+            let errorMessage = '';
+
             Array.from(documentsInput.files).forEach((file) => {
                 if (selectedFiles.files.length >= 20) {
+                    errorMessage = 'A permit can only have up to 20 documents.';
+
+                    return;
+                }
+
+                const normalizedName = file.name.toLowerCase();
+
+                if (existingDocumentNames.has(normalizedName)) {
+                    errorMessage = 'A document with this file name already exists for this permit.';
+
                     return;
                 }
 
                 const alreadySelected = Array.from(selectedFiles.files).some((selectedFile) => (
-                    selectedFile.name === file.name
-                    && selectedFile.size === file.size
-                    && selectedFile.lastModified === file.lastModified
+                    selectedFile.name.toLowerCase() === normalizedName
                 ));
 
                 if (alreadySelected) {
+                    errorMessage = 'Each uploaded document must have a unique file name.';
+
                     return;
                 }
 
@@ -593,7 +775,14 @@
             });
 
             documentsInput.files = selectedFiles.files;
+            selectedPermitFilesCount = selectedFiles.files.length;
             syncSelectedDocuments();
+
+            if (errorMessage) {
+                showUploadError(errorMessage);
+            } else {
+                clearUploadError();
+            }
         });
     }
 </script>
