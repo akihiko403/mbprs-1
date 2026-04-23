@@ -119,6 +119,36 @@
         border-radius:10px;
     }
     .document-action-btn svg { width:16px; height:16px; flex-shrink:0; }
+    .document-table-card {
+        margin-top:6px;
+        overflow:hidden;
+        border:1px solid var(--line);
+        border-radius:8px;
+        background:#fff;
+    }
+    .document-table-card .table-wrap { overflow-x:auto; }
+    .document-table { margin:0; min-width:560px; font-size:.9rem; }
+    .document-table th,
+    .document-table td { padding:7px 10px; vertical-align:middle; }
+    .document-table th { font-size:.72rem; letter-spacing:.05em; }
+    .document-table td strong { font-size:.92rem; font-weight:600; }
+    .document-table .document-action-btn {
+        width:30px;
+        min-width:30px;
+        height:30px;
+        border-radius:8px;
+    }
+    .document-table .document-action-btn svg { width:14px; height:14px; }
+    .document-table-actions {
+        display:flex;
+        justify-content:flex-end;
+        gap:5px;
+        white-space:nowrap;
+    }
+    .status-history-table { font-size:.9rem; }
+    .status-history-table th,
+    .status-history-table td { padding:7px 10px; vertical-align:middle; }
+    .status-history-table th { font-size:.72rem; letter-spacing:.05em; }
     .preview-modal-card { width:min(1080px, 100%); }
     .document-preview-shell { display:grid; gap:16px; }
     .document-preview-frame { width:100%; min-height:68vh; border:1px solid var(--line); border-radius:16px; background:#f6faf8; }
@@ -293,37 +323,56 @@
             <div style="margin-top:16px;">
                 <strong>Documents</strong>
                 @if($selectedPermit->documents->isNotEmpty())
-                    <div class="document-grid">
+                    <div class="document-table-card">
+                        <div class="table-wrap">
+                            <table class="document-table">
+                                <thead>
+                                    <tr>
+                                        <th>File Name</th>
+                                        <th>Type</th>
+                                        <th>Size</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
                         @foreach($selectedPermit->documents as $document)
                             @php
                                 $mime = $document->mime_type ?? '';
                                 $canPreview = \Illuminate\Support\Str::startsWith($mime, ['image/', 'text/']) || in_array($mime, ['application/pdf'], true);
                             @endphp
-                            <div class="document-card">
-                                <p class="document-card-name">{{ $document->original_name }}</p>
-                                <p class="document-card-meta">{{ strtoupper(pathinfo($document->original_name, PATHINFO_EXTENSION) ?: 'FILE') }} · {{ number_format(($document->size ?? 0) / 1024, 1) }} KB</p>
-                                <div class="document-card-actions">
+                            <tr>
+                                <td><strong>{{ $document->original_name }}</strong></td>
+                                <td>{{ strtoupper(pathinfo($document->original_name, PATHINFO_EXTENSION) ?: 'FILE') }}</td>
+                                <td>{{ number_format(($document->size ?? 0) / 1024, 1) }} KB</td>
+                                <td>
+                                <div class="document-table-actions">
                                     <button
-                                        class="btn secondary"
+                                        class="btn secondary document-action-btn"
                                         type="button"
                                         data-open-document-preview
                                         data-preview-url="{{ route('building-permits.documents.preview', [$selectedPermit, $document]) }}"
                                         data-download-url="{{ route('building-permits.documents.download', [$selectedPermit, $document]) }}"
                                         data-document-name="{{ $document->original_name }}"
                                         data-previewable="{{ $canPreview ? 'true' : 'false' }}"
-                                    >View</button>
-                                    <a class="btn secondary document-action-btn" href="{{ route('building-permits.documents.download', [$selectedPermit, $document]) }}">Download</a>
+                                        title="View"
+                                        aria-label="View {{ $document->original_name }}"
+                                    ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                                    <a class="btn secondary document-action-btn" href="{{ route('building-permits.documents.download', [$selectedPermit, $document]) }}" title="Download" aria-label="Download {{ $document->original_name }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></a>
                                 </div>
-                            </div>
+                                </td>
+                            </tr>
                         @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 @else
                     <div>No documents uploaded.</div>
                 @endif
             </div>
             <div style="margin-top:16px;"><strong>Remarks</strong><div>{{ $selectedPermit->remarks ?: 'No remarks provided.' }}</div></div>
-            <h4>Status History</h4>
-            <div class="table-wrap"><table><thead><tr><th>Date</th><th>From</th><th>To</th><th>By</th><th>Remarks</th></tr></thead><tbody>@foreach($selectedPermit->statusLogs as $log)<tr><td>{{ $log->created_at?->format('M d, Y h:i A') }}</td><td>{{ $log->old_status ?: '—' }}</td><td>{{ $log->new_status }}</td><td>{{ $log->actor?->name ?: 'System' }}</td><td>{{ $log->remarks ?: '—' }}</td></tr>@endforeach</tbody></table></div>
+            <h4 style="margin:14px 0 6px;">Status History</h4>
+            <div class="table-wrap"><table class="status-history-table"><thead><tr><th>Date</th><th>From</th><th>To</th><th>By</th><th>Remarks</th></tr></thead><tbody>@foreach($selectedPermit->statusLogs as $log)<tr><td>{{ $log->created_at?->format('M d, Y h:i A') }}</td><td>{{ $log->old_status ?: '—' }}</td><td>{{ $log->new_status }}</td><td>{{ $log->actor?->name ?: 'System' }}</td><td>{{ $log->remarks ?: '—' }}</td></tr>@endforeach</tbody></table></div>
         </div>
     </div>
 </div>
@@ -787,6 +836,7 @@
     }
 </script>
 @endsection
+
 
 
 
