@@ -34,12 +34,17 @@
 
             <div class="settings-fields">
                 <div>
-                    <label>System Name</label>
+                    <label>Name</label>
                     <input type="text" name="system_name" value="{{ old('system_name', $settings->system_name) }}" required>
                 </div>
 
                 <div>
-                    <label>System Description</label>
+                    <label>Sub Header</label>
+                    <input type="text" name="system_subheader" value="{{ old('system_subheader', $settings->system_subheader ?? 'Municipality of Lebak') }}" placeholder="Municipality of Lebak">
+                </div>
+
+                <div>
+                    <label>Description</label>
                     <textarea name="system_description" placeholder="Short description shown on login and system areas.">{{ old('system_description', $settings->system_description) }}</textarea>
                 </div>
             </div>

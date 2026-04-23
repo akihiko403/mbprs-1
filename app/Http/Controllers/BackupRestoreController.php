@@ -9,12 +9,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class BackupRestoreController extends Controller
 {
     public function index(): View|RedirectResponse
     {
-        if ($redirect = $this->redirectIfMissingRole(Role::ADMINISTRATOR)) {
+        if ($redirect = $this->redirectIfMissingRole(Role::ADMIN, Role::ADMINISTRATOR)) {
             return $redirect;
         }
 
@@ -28,7 +29,7 @@ class BackupRestoreController extends Controller
 
     public function backup(): StreamedResponse|RedirectResponse
     {
-        if ($redirect = $this->redirectIfMissingRole(Role::ADMINISTRATOR)) {
+        if ($redirect = $this->redirectIfMissingRole(Role::ADMIN, Role::ADMINISTRATOR)) {
             return $redirect;
         }
 
@@ -69,7 +70,7 @@ class BackupRestoreController extends Controller
 
     public function restore(Request $request): RedirectResponse
     {
-        if ($redirect = $this->redirectIfMissingRole(Role::ADMINISTRATOR)) {
+        if ($redirect = $this->redirectIfMissingRole(Role::ADMIN, Role::ADMINISTRATOR)) {
             return $redirect;
         }
 
@@ -85,11 +86,15 @@ class BackupRestoreController extends Controller
 
         $sql = preg_replace('/^\s*--.*$/m', '', $sql);
 
-        DB::transaction(function () use ($sql): void {
+        try {
             foreach ($this->splitStatements($sql) as $statement) {
                 DB::unprepared($statement);
             }
-        });
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', 'Database restore failed. Please make sure the backup file is valid and try again.');
+        }
 
         return redirect()->route('backup-restore.index')->with('success', 'Database restored successfully.');
     }

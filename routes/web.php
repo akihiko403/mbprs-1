@@ -24,6 +24,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/profile', ProfileController::class)->name('profile');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/reset-password', [ProfileController::class, 'resetPassword'])->name('profile.reset-password');
     Route::get('/settings', SettingsController::class)->name('settings');
     Route::patch('/settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::get('/backup-restore', [BackupRestoreController::class, 'index'])->name('backup-restore.index');
@@ -37,6 +38,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('building-permits', BuildingPermitController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
     Route::get('/building-permits/{buildingPermit}/documents/{document}/preview', [BuildingPermitController::class, 'previewDocument'])->name('building-permits.documents.preview');
     Route::get('/building-permits/{buildingPermit}/documents/{document}', [BuildingPermitController::class, 'downloadDocument'])->name('building-permits.documents.download');
+    Route::delete('/building-permits/{buildingPermit}/documents/{document}', [BuildingPermitController::class, 'destroyDocument'])->name('building-permits.documents.destroy');
     Route::patch('/building-types/trash/{id}/restore', [BuildingTypeController::class, 'restore'])->name('building-types.restore');
     Route::delete('/building-types/trash/{id}/force-delete', [BuildingTypeController::class, 'forceDelete'])->name('building-types.force-delete');
     Route::resource('building-types', BuildingTypeController::class)->only(['index', 'store', 'update', 'destroy']);
@@ -48,6 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/permit-approvals/{buildingPermit}/status', [PermitApprovalController::class, 'updateStatus'])->name('permit-approvals.update-status');
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/print', [ReportController::class, 'print'])->name('reports.print');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
@@ -59,7 +62,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/users/trash/{id}/restore', [UserManagementController::class, 'restore'])->name('users.restore');
     Route::delete('/users/trash/{id}/force-delete', [UserManagementController::class, 'forceDelete'])->name('users.force-delete');
     Route::patch('/users/{user}/toggle', [UserManagementController::class, 'toggle'])->name('users.toggle');
-    Route::patch('/users/{user}/reset-password', [UserManagementController::class, 'reset-password'])->name('users.reset-password');
+    Route::patch('/users/{user}/reset-password', [UserManagementController::class, 'resetPassword'])->name('users.reset-password');
 });
 
 
