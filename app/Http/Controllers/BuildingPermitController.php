@@ -24,18 +24,12 @@ class BuildingPermitController extends Controller
             return $redirect;
         }
 
-        $filters = $request->only(['search', 'status', 'building_type_id', 'building_category_id', 'sort']);
+        $filters = $request->only(['search']);
         $permitsQuery = BuildingPermit::query()
             ->with(['buildingType', 'buildingCategory', 'creator', 'approver'])
             ->filter($filters);
 
-        match ($filters['sort'] ?? null) {
-            'owner_az' => $permitsQuery->orderBy('owner_last_name')->orderBy('owner_first_name'),
-            'owner_za' => $permitsQuery->orderByDesc('owner_last_name')->orderByDesc('owner_first_name'),
-            'permit_az' => $permitsQuery->orderBy('permit_id'),
-            'permit_za' => $permitsQuery->orderByDesc('permit_id'),
-            default => $permitsQuery->latest(),
-        };
+        $permitsQuery->latest();
 
         return view('building-permits.index', [
             'title' => 'Building Permit',
@@ -148,6 +142,27 @@ class BuildingPermitController extends Controller
         $permit->forceDelete();
 
         return back()->with('success', 'Building permit permanently deleted.');
+    }
+
+    public function clearTrash(Request $request): RedirectResponse
+    {
+        if ($redirect = $this->redirectIfCannotAccess('building-permits')) {
+            return $redirect;
+        }
+
+        if (! $request->user()->canDeleteRecords()) {
+            return back()->with('error', 'Only administrators can permanently delete records.');
+        }
+
+        $deletedPermits = BuildingPermit::query()->onlyTrashed()->get();
+
+        if ($deletedPermits->isEmpty()) {
+            return back()->with('error', 'There are no deleted building permits to clear.');
+        }
+
+        $deletedPermits->each->forceDelete();
+
+        return back()->with('success', 'All deleted building permits were permanently deleted.');
     }
 
     public function previewDocument(Request $request, BuildingPermit $buildingPermit, BuildingPermitDocument $document): BinaryFileResponse|RedirectResponse
