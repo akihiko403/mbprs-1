@@ -60,7 +60,7 @@
         </div>
         <div class="stack">
             <button class="btn report-action" type="button" data-open-modal="report-filter-modal">Filters</button>
-            <a class="btn secondary report-action" href="{{ route('reports.export', request()->query()) }}">Export Excel/CSV</a>
+            <a class="btn secondary report-action" href="{{ route('reports.export', request()->query()) }}">Export XLSX</a>
             <a class="btn secondary report-action" href="{{ route('reports.print', request()->query()) }}" target="_blank" rel="noopener">Print Report</a>
         </div>
         <form class="card-search" method="GET" action="{{ route('reports.index') }}">
@@ -101,23 +101,16 @@
         <div class="modal-head">
             <div>
                 <h3 style="margin:0;">Report Filters</h3>
-                <div class="muted">Choose a report type and narrow the preview data.</div>
+                <div class="muted">Narrow the preview data using the available report filters.</div>
             </div>
             <button class="icon-btn" type="button" data-close-modal="report-filter-modal">Close</button>
         </div>
         <div class="modal-body">
             <form method="GET" action="{{ route('reports.index') }}" class="form-grid" id="report-filter-form">
-                <div><label>Report Type</label><select name="report_type">@foreach($reportTypes as $key => $label)<option value="{{ $key }}" @selected($reportType === $key)>{{ $label }}</option>@endforeach</select></div>
                 <div><label>Status</label><select name="status"><option value="">All</option><option value="Pending" @selected(($filters['status'] ?? '') === 'Pending')>Pending</option><option value="Approved" @selected(($filters['status'] ?? '') === 'Approved')>Approved</option><option value="Rejected" @selected(($filters['status'] ?? '') === 'Rejected')>Rejected</option><option value="Returned" @selected(($filters['status'] ?? '') === 'Returned')>Returned</option></select></div>
-                <div><label>Month</label><input type="number" name="month" min="1" max="12" value="{{ $filters['month'] ?? '' }}"></div>
-                <div><label>Year</label><input type="number" name="year" min="2000" value="{{ $filters['year'] ?? '' }}"></div>
-                <div><label>Barangay</label><input name="barangay" value="{{ $filters['barangay'] ?? '' }}"></div>
-                <div><label>City / Municipality</label><input name="city_municipality" value="{{ $filters['city_municipality'] ?? '' }}"></div>
-                <div><label>Province</label><input name="province" value="{{ $filters['province'] ?? '' }}"></div>
-                <div><label>Building Type</label><select name="building_type_id"><option value="">All</option>@foreach($buildingTypes as $type)<option value="{{ $type->id }}" @selected((string)($filters['building_type_id'] ?? '') === (string)$type->id)>{{ $type->name }}</option>@endforeach</select></div>
+                <div><label>Month</label><select name="month"><option value="">All</option>@foreach($months as $value => $label)<option value="{{ $value }}" @selected((string)($filters['month'] ?? '') === (string)$value)>{{ $label }}</option>@endforeach</select></div>
+                <div><label>Year</label><select name="year"><option value="">All</option>@foreach($years as $value => $label)<option value="{{ $value }}" @selected((string)($filters['year'] ?? '') === (string)$value)>{{ $label }}</option>@endforeach</select></div>
                 <div><label>Building Category</label><select name="building_category_id"><option value="">All</option>@foreach($buildingCategories as $category)<option value="{{ $category->id }}" @selected((string)($filters['building_category_id'] ?? '') === (string)$category->id)>{{ $category->name }}</option>@endforeach</select></div>
-                <div><label>Date From</label><input type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}"></div>
-                <div><label>Date To</label><input type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}"></div>
                 <div class="filter-actions">
                     <a class="btn secondary" href="{{ route('reports.index') }}">Reset</a>
                     <button class="btn" type="submit">Preview</button>
