@@ -82,25 +82,11 @@ class BuildingPermit extends Model
                     $nested->where('permit_id', 'like', "%{$search}%")
                         ->orWhere('owner_last_name', 'like', "%{$search}%")
                         ->orWhere('owner_first_name', 'like', "%{$search}%")
-                        ->orWhere('status', 'like', "%{$search}%")
-                        ->orWhere('barangay', 'like', "%{$search}%")
-                        ->orWhere('city_municipality', 'like', "%{$search}%")
-                        ->orWhere('province', 'like', "%{$search}%")
-                        ->orWhereRaw("owner_last_name || ', ' || owner_first_name LIKE ?", ["%{$search}%"])
-                        ->orWhereHas('buildingType', fn (Builder $query) => $query->where('name', 'like', "%{$search}%"))
-                        ->orWhereHas('buildingCategory', fn (Builder $query) => $query->where('name', 'like', "%{$search}%"));
+                        ->orWhere('owner_middle_name', 'like', "%{$search}%")
+                        ->orWhere('owner_suffix', 'like', "%{$search}%")
+                        ->orWhereRaw("owner_last_name || ', ' || owner_first_name LIKE ?", ["%{$search}%"]);
                 });
-            })
-            ->when($filters['status'] ?? null, fn (Builder $builder, string $status) => $builder->where('status', $status))
-            ->when($filters['building_type_id'] ?? null, fn (Builder $builder, $type) => $builder->where('building_type_id', $type))
-            ->when($filters['building_category_id'] ?? null, fn (Builder $builder, $category) => $builder->where('building_category_id', $category))
-            ->when($filters['barangay'] ?? null, fn (Builder $builder, $barangay) => $builder->where('barangay', 'like', "%{$barangay}%"))
-            ->when($filters['city_municipality'] ?? null, fn (Builder $builder, $cityMunicipality) => $builder->where('city_municipality', 'like', "%{$cityMunicipality}%"))
-            ->when($filters['province'] ?? null, fn (Builder $builder, $province) => $builder->where('province', 'like', "%{$province}%"))
-            ->when($filters['month'] ?? null, fn (Builder $builder, $month) => $builder->whereMonth('created_at', $month))
-            ->when($filters['year'] ?? null, fn (Builder $builder, $year) => $builder->whereYear('created_at', $year))
-            ->when($filters['date_from'] ?? null, fn (Builder $builder, $from) => $builder->whereDate('created_at', '>=', $from))
-            ->when($filters['date_to'] ?? null, fn (Builder $builder, $to) => $builder->whereDate('created_at', '<=', $to));
+            });
     }
 
     public function buildingType(): BelongsTo

@@ -7,14 +7,28 @@
     <style>
         body {
             margin: 0;
-            padding: 18mm 12mm 12mm;
+            padding: 10mm 4mm 8mm;
             font-family: Arial, sans-serif;
             color: #000;
             background: #fff;
         }
         .report-sheet-header {
-            text-align: center;
             margin-bottom: 18px;
+        }
+        .report-sheet-header-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+        }
+        .report-sheet-logo {
+            width: 58px;
+            height: 58px;
+            object-fit: contain;
+            flex: 0 0 58px;
+        }
+        .report-sheet-heading {
+            text-align: center;
         }
         .report-sheet-title {
             margin: 0;
@@ -35,40 +49,54 @@
         .report-sheet-table th,
         .report-sheet-table td {
             border: 1px solid #000;
-            padding: 4px 5px;
-            font-size: 11px;
+            padding: 3px 4px;
+            font-size: 9px;
             font-weight: 400;
-            line-height: 1.25;
+            line-height: 1.15;
             text-align: left;
             vertical-align: top;
-            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: anywhere;
         }
         .report-sheet-table th {
             text-transform: uppercase;
         }
+        .report-sheet-table th:first-child,
+        .report-sheet-table td:first-child {
+            white-space: nowrap;
+            word-break: normal;
+            overflow-wrap: normal;
+        }
         @page {
             size: landscape;
-            margin: 12mm;
+            margin: 6mm 4mm;
         }
     </style>
 </head>
 <body onload="window.print()">
     <div class="report-sheet-header">
-        <h1 class="report-sheet-title">{{ $reportHeading }}</h1>
-        <div class="report-sheet-subtitle">{{ $reportSubheading }}</div>
+        <div class="report-sheet-header-wrap">
+            @if(!empty($reportLogoUrl))
+                <img class="report-sheet-logo" src="{{ $reportLogoUrl }}" alt="System Logo">
+            @endif
+            <div class="report-sheet-heading">
+                <h1 class="report-sheet-title">{{ $reportHeading }}</h1>
+                <div class="report-sheet-subtitle">{{ $reportSubheading }}</div>
+            </div>
+        </div>
     </div>
 
     <table class="report-sheet-table">
         <colgroup>
-            <col style="width:88px;">
-            <col style="width:190px;">
-            <col style="width:150px;">
-            <col style="width:190px;">
-            <col style="width:170px;">
-            <col style="width:190px;">
-            <col style="width:190px;">
-            <col style="width:110px;">
-            <col style="width:145px;">
+            <col style="width:10%;">
+            <col style="width:14%;">
+            <col style="width:10%;">
+            <col style="width:13%;">
+            <col style="width:12%;">
+            <col style="width:12%;">
+            <col style="width:12%;">
+            <col style="width:9%;">
+            <col style="width:8%;">
         </colgroup>
         <thead>
             <tr>
