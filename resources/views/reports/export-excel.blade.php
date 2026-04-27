@@ -14,8 +14,31 @@
             padding: 18px 12px 12px;
         }
         .report-sheet-header {
-            text-align: center;
             margin-bottom: 18px;
+        }
+        .report-sheet-header-table {
+            width: auto;
+            margin: 0 auto;
+            border-collapse: separate;
+            table-layout: auto;
+        }
+        .report-sheet-header-table td {
+            border: none;
+            padding: 0;
+            vertical-align: middle;
+        }
+        .report-sheet-header-logo-cell {
+            width: 72px;
+            padding-right: 12px;
+        }
+        .report-sheet-header-logo {
+            display: block;
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+        }
+        .report-sheet-header-copy {
+            text-align: center;
         }
         .report-sheet-title {
             margin: 0;
@@ -50,8 +73,19 @@
 <body>
     <div class="report-sheet">
         <div class="report-sheet-header">
-            <h1 class="report-sheet-title">{{ $reportHeading }}</h1>
-            <div class="report-sheet-subtitle">{{ $reportSubheading }}</div>
+            <table class="report-sheet-header-table" role="presentation">
+                <tr>
+                    @if(!empty($reportLogo))
+                        <td class="report-sheet-header-logo-cell">
+                            <img class="report-sheet-header-logo" src="{{ $reportLogo }}" alt="System Logo">
+                        </td>
+                    @endif
+                    <td class="report-sheet-header-copy">
+                        <h1 class="report-sheet-title">{{ $reportHeading }}</h1>
+                        <div class="report-sheet-subtitle">{{ $reportSubheading }}</div>
+                    </td>
+                </tr>
+            </table>
         </div>
 
         <table>

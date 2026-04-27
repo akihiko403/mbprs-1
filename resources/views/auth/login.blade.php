@@ -43,6 +43,7 @@
 
         </section>
         <section class="login-form">
+            <p style="margin-top:0; margin-bottom:12px;"><a href="{{ route('landing') }}" class="muted">&larr; Back to homepage</a></p>
             <h2 style="margin-top:0;">Login</h2>
             <p class="muted">Enter your assigned username and password to continue.</p>
             <form action="{{ route('login.attempt') }}" method="POST" class="grid">

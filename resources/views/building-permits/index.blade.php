@@ -157,14 +157,13 @@
     .document-preview-tools { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
     .document-preview-tools .btn { width:auto; min-width:0; }
     .header-actions { display:flex; justify-content:flex-end; gap:10px; align-items:center; }
+    .modal-head-actions { display:flex; align-items:center; gap:8px; }
     .trash-header-btn { display:inline-flex; align-items:center; justify-content:center; width:46px; height:46px; min-width:46px; padding:0; border-radius:10px; }
     .trash-header-btn svg { width:18px; height:18px; }
-    .permit-filter-form { grid-column:1 / -1; display:grid; grid-template-columns:minmax(280px, 1fr) repeat(4, minmax(140px, 180px)) auto; gap:8px; width:100%; }
-    .permit-filter-form input, .permit-filter-form select, .permit-filter-form .btn { min-height:40px; padding:8px 11px; border-radius:10px; font-size:.9rem; }
+    .permit-filter-form { grid-column:1 / -1; display:grid; grid-template-columns:minmax(280px, 1fr) auto; gap:8px; width:100%; }
+    .permit-filter-form input, .permit-filter-form .btn { min-height:40px; padding:8px 11px; border-radius:10px; font-size:.9rem; }
     .permit-filter-form .btn { display:inline-flex; align-items:center; justify-content:center; width:auto; white-space:nowrap; }
-    .permit-filter-actions { display:flex; justify-content:flex-end; gap:8px; }
-    @media (max-width:1180px) { .permit-filter-form { grid-template-columns:repeat(2, minmax(0, 1fr)); } .permit-filter-actions { justify-content:flex-start; } }
-    @media (max-width:640px) { .permit-filter-form { grid-template-columns:1fr; } .permit-filter-actions, .permit-filter-form .btn { width:100%; } }
+    @media (max-width:640px) { .permit-filter-form { grid-template-columns:1fr; } .permit-filter-form .btn { width:100%; } }
 </style>
 
 <div class="card">
@@ -181,39 +180,9 @@
                 <button class="btn" style="width:auto;" type="button" data-open-modal="permit-modal">Add Building Permit</button>
             @endunless
         </div>
-        <form class="permit-filter-form" method="GET" action="{{ route('building-permits.index') }}">
-            <input name="search" value="{{ request('search') }}" placeholder="Search permit ID, owner, type, category, status">
-            <select name="sort" aria-label="Alphabetical order">
-                <option value="">Latest First</option>
-                <option value="owner_az" @selected(request('sort') === 'owner_az')>Owner A-Z</option>
-                <option value="owner_za" @selected(request('sort') === 'owner_za')>Owner Z-A</option>
-                <option value="permit_az" @selected(request('sort') === 'permit_az')>Permit ID A-Z</option>
-                <option value="permit_za" @selected(request('sort') === 'permit_za')>Permit ID Z-A</option>
-            </select>
-            <select name="status" aria-label="Status">
-                <option value="">All Status</option>
-                @foreach($statuses as $status)
-                    <option value="{{ $status }}" @selected(request('status') === $status)>{{ $status }}</option>
-                @endforeach
-            </select>
-            <select name="building_type_id" aria-label="Building type">
-                <option value="">All Types</option>
-                @foreach($buildingTypes as $type)
-                    <option value="{{ $type->id }}" @selected((string) request('building_type_id') === (string) $type->id)>{{ $type->name }}</option>
-                @endforeach
-            </select>
-            <select name="building_category_id" aria-label="Building category">
-                <option value="">All Categories</option>
-                @foreach($buildingCategories as $category)
-                    <option value="{{ $category->id }}" @selected((string) request('building_category_id') === (string) $category->id)>{{ $category->name }}</option>
-                @endforeach
-            </select>
-            <div class="permit-filter-actions">
-                <button class="btn" type="submit">Search</button>
-                @if(request()->hasAny(['search', 'sort', 'status', 'building_type_id', 'building_category_id']))
-                    <a class="btn secondary" href="{{ route('building-permits.index') }}">Reset</a>
-                @endif
-            </div>
+        <form class="permit-filter-form" method="GET" action="{{ route('building-permits.index') }}" id="permit-search-form">
+            <input name="search" value="{{ request('search') }}" placeholder="Search permit ID or owner name" id="permit-search-input">
+            <button class="btn" type="submit">Search</button>
         </form>
     </div>
 
@@ -261,7 +230,16 @@
                 <h3 style="margin:0;">Deleted Building Permits</h3>
                 <div class="muted">Restore deleted permits or permanently remove records.</div>
             </div>
-            <button class="icon-btn" type="button" data-close-modal="permit-trash-modal">Close</button>
+            <div class="modal-head-actions">
+                @if($deletedPermits->isNotEmpty())
+                    <form method="POST" action="{{ route('building-permits.clear-trash') }}" data-confirm-delete data-confirm-message="Permanently delete all trashed building permits? This cannot be undone." style="display:inline-flex; margin:0;">
+                        @csrf
+                        @method('DELETE')
+                        <button class="btn danger trash-icon-btn" type="submit" title="Clear All" aria-label="Clear All"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M4 6l1.5 14"/><path d="M20 6l-1.5 14"/></svg></button>
+                    </form>
+                @endif
+                <button class="icon-btn" type="button" data-close-modal="permit-trash-modal">Close</button>
+            </div>
         </div>
         <div class="modal-body">
             <div class="table-wrap">
@@ -532,6 +510,8 @@
     const discardSubmit = document.getElementById('discard-changes-submit');
     const discardCancel = document.getElementById('discard-changes-cancel');
     const permitModal = document.getElementById('permit-modal');
+    const permitSearchForm = document.getElementById('permit-search-form');
+    const permitSearchInput = document.getElementById('permit-search-input');
     const permitForm = permitModal?.querySelector('form');
     let pendingDiscardModal = null;
     let initialPermitFormState = '';
@@ -619,6 +599,14 @@
 
     if (permitModal?.classList.contains('open')) {
         syncInitialPermitFormState();
+    }
+
+    if (permitSearchForm && permitSearchInput) {
+        permitSearchInput.addEventListener('input', () => {
+            if (permitSearchInput.value.trim() === '' && new URLSearchParams(window.location.search).has('search')) {
+                window.location = permitSearchForm.action;
+            }
+        });
     }
 
     document.addEventListener('click', function (event) {

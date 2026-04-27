@@ -16,7 +16,8 @@ use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    Route::get('/', [AuthController::class, 'create'])->name('login');
+    Route::get('/', [AuthController::class, 'landing'])->name('landing');
+    Route::get('/login', [AuthController::class, 'create'])->name('login');
     Route::post('/login', [AuthController::class, 'store'])->name('login.attempt');
 });
 
@@ -35,6 +36,7 @@ Route::middleware('auth')->group(function () {
 
     Route::patch('/building-permits/trash/{id}/restore', [BuildingPermitController::class, 'restore'])->name('building-permits.restore');
     Route::delete('/building-permits/trash/{id}/force-delete', [BuildingPermitController::class, 'forceDelete'])->name('building-permits.force-delete');
+    Route::delete('/building-permits/trash/clear-all', [BuildingPermitController::class, 'clearTrash'])->name('building-permits.clear-trash');
     Route::resource('building-permits', BuildingPermitController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
     Route::get('/building-permits/{buildingPermit}/documents/{document}/preview', [BuildingPermitController::class, 'previewDocument'])->name('building-permits.documents.preview');
     Route::get('/building-permits/{buildingPermit}/documents/{document}', [BuildingPermitController::class, 'downloadDocument'])->name('building-permits.documents.download');

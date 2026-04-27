@@ -10,6 +10,15 @@ use Illuminate\View\View;
 
 class AuthController extends Controller
 {
+    public function landing(): View|RedirectResponse
+    {
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+
+        return view('landing');
+    }
+
     public function create(): View|RedirectResponse
     {
         if (Auth::check()) {
@@ -55,6 +64,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        return redirect()->route('landing');
     }
 }
