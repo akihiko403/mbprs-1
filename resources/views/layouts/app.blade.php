@@ -51,10 +51,12 @@
         .notification-clear:hover { background:#c7e1d8; }
         .notification-item { display:grid; grid-template-columns:8px 1fr; gap:10px; padding:10px; border-radius:9px; }
         .notification-item:hover { background:#eef6f3; }
+        .notification-item-button { width:100%; border:0; background:transparent; color:inherit; text-align:left; cursor:pointer; }
         .notification-item strong { display:block; font-size:.88rem; }
         .notification-item small { display:block; color:var(--muted); font-size:.78rem; line-height:1.35; margin-top:2px; }
         .notification-item em { display:block; color:#8a9995; font-size:.72rem; font-style:normal; margin-top:4px; }
         .notification-dot { width:8px; height:8px; margin-top:5px; border-radius:999px; background:var(--brand); }
+        .notification-dot.read { background:#cfd9d4; }
         .notification-empty { padding:18px 10px; color:var(--muted); text-align:center; font-size:.9rem; }
         .dropdown-enter { transition:opacity .16s ease, transform .16s ease; }
         .dropdown-enter-start { opacity:0; transform:translateY(-4px) scale(.98); }
