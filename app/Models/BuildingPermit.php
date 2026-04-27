@@ -84,9 +84,17 @@ class BuildingPermit extends Model
                         ->orWhere('owner_first_name', 'like', "%{$search}%")
                         ->orWhere('owner_middle_name', 'like', "%{$search}%")
                         ->orWhere('owner_suffix', 'like', "%{$search}%")
+                        ->orWhere('barangay', 'like', "%{$search}%")
+                        ->orWhere('city_municipality', 'like', "%{$search}%")
+                        ->orWhere('province', 'like', "%{$search}%")
+                        ->orWhere('status', 'like', "%{$search}%")
                         ->orWhereRaw("owner_last_name || ', ' || owner_first_name LIKE ?", ["%{$search}%"]);
                 });
-            });
+            })
+            ->when($filters['status'] ?? null, fn (Builder $builder, string $status) => $builder->where('status', $status))
+            ->when($filters['building_category_id'] ?? null, fn (Builder $builder, string $categoryId) => $builder->where('building_category_id', $categoryId))
+            ->when($filters['month'] ?? null, fn (Builder $builder, string $month) => $builder->whereMonth('created_at', (int) $month))
+            ->when($filters['year'] ?? null, fn (Builder $builder, string $year) => $builder->whereYear('created_at', (int) $year));
     }
 
     public function buildingType(): BelongsTo
