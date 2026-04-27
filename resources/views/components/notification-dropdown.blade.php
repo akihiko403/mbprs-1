@@ -20,6 +20,13 @@
         ->count();
 
     $canViewAuditLog = $user?->canAccess('audit-logs');
+    $isUnreadNotification = function ($notification) use ($readAt, $today): bool {
+        if (! $readAt || ! $readAt->isToday()) {
+            return $notification->created_at->greaterThanOrEqualTo($today);
+        }
+
+        return $notification->created_at->gt($readAt);
+    };
     $notificationText = function ($notification): array {
         $description = $notification->description ?: 'System record changed.';
 
@@ -75,21 +82,34 @@
             @if($recentCount > 0)
                 <form method="POST" action="{{ route('notifications.read') }}">
                     @csrf
-                    <button class="notification-clear" type="submit">Clear</button>
+                    <button class="notification-clear" type="submit">Mark as read</button>
                 </form>
             @endif
         </div>
 
         @forelse($notifications as $notification)
-            @php([$notificationTitle, $notificationDescription] = $notificationText($notification))
-            <a class="notification-item" href="{{ $canViewAuditLog ? route('audit-logs.index', ['search' => $notification->description ?: $notification->action]) : '#' }}">
-                <span class="notification-dot" aria-hidden="true"></span>
-                <span>
-                    <strong>{{ $notificationTitle }}</strong>
-                    <small>{{ $notificationDescription }}</small>
-                    <em>{{ $notification->user?->name ?? 'System' }} &middot; {{ $notification->created_at->diffForHumans() }}</em>
-                </span>
-            </a>
+            @php
+                [$notificationTitle, $notificationDescription] = $notificationText($notification);
+                $isUnread = $isUnreadNotification($notification);
+                $redirectTo = $canViewAuditLog
+                    ? route('audit-logs.index', ['search' => $notification->description ?: $notification->action])
+                    : null;
+            @endphp
+            <form method="POST" action="{{ route('notifications.read') }}">
+                @csrf
+                <input type="hidden" name="read_at" value="{{ $notification->created_at->toIso8601String() }}">
+                @if($redirectTo)
+                    <input type="hidden" name="redirect_to" value="{{ $redirectTo }}">
+                @endif
+                <button class="notification-item notification-item-button" type="submit">
+                    <span class="notification-dot {{ $isUnread ? '' : 'read' }}" aria-hidden="true"></span>
+                    <span>
+                        <strong>{{ $notificationTitle }}</strong>
+                        <small>{{ $notificationDescription }}</small>
+                        <em>{{ $notification->user?->name ?? 'System' }} &middot; {{ $notification->created_at->diffForHumans() }}</em>
+                    </span>
+                </button>
+            </form>
         @empty
             <div class="notification-empty">No new changes yet.</div>
         @endforelse
